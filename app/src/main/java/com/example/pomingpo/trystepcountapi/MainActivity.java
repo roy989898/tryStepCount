@@ -5,6 +5,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
@@ -17,6 +18,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private SensorManager mSensorManager;
     private Sensor mStepCount;
     private float startCount = 0;
+    private Handler mHandler;
+    private Runnable run = new Runnable() {
+        @Override
+        public void run() {
+            flush();
+        }
+    };
 
 
     @Override
@@ -32,6 +40,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         btStart.setOnClickListener(this);
 
 
+        mHandler = new Handler();
         mSensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
 
         mStepCount = mSensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
@@ -65,12 +74,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         switch (v.getId()) {
             case R.id.bt_start:
                 mSensorManager.registerListener(this, mStepCount, SensorManager.SENSOR_DELAY_FASTEST);
+                mHandler.postDelayed(run, 1000);
+
                 break;
             case R.id.bt_stop:
                 mSensorManager.unregisterListener(this, mStepCount);
                 startCount = 0;
+                mHandler.removeCallbacks(run);
                 break;
         }
 
+    }
+
+    private void flush() {
+        mSensorManager.flush(MainActivity.this);
+        mHandler.postDelayed(run, 1000);
     }
 }
